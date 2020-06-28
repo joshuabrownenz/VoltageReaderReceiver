@@ -6,10 +6,10 @@ void isr ()  {
   if (interruptTime - lastInterruptTime > 5) {
     if (digitalRead(outputB) == LOW)
     {
-      deltaEncoder-- ; // Could be -5 or -10
+      deltaEncoder-- ; 
     }
     else {
-      deltaEncoder++ ; // Could be +5 or +10
+      deltaEncoder++ ; 
     }
     dataChanged = true;
   }
@@ -22,15 +22,13 @@ void checkEncoder()
   if(digitalRead(switchPin) && beenPressed)
   {
     beenPressed = false;
-    
-    bool hold = pressTime + holdTime < millis();
+    bool hold = pressTime + clearHoldTime < millis();
     if(hold)
     {
       noToneAC();
       toneAC(400, 10, 150, true); 
     }
     onClick(hold);
-
   }
   else if(!digitalRead(switchPin) && !beenPressed)
   {
@@ -44,9 +42,10 @@ void checkEncoder()
 
 void onClick(bool hold)
 {
+  deltaEncoder = 0;
   if(hold)
   {
-    
+    ResetEEPROM();
   }
   else
   {
@@ -54,19 +53,29 @@ void onClick(bool hold)
     {
       menu = 1;
       int connections = 0;
+      bool dontChange = false;
       for(int i = 0; i < 3; i++)
       {
         if(activePipes[i])
           connections++;
+        if(connections == menuItem + 1 && !dontChange)
+        {
+          editingAddress = i;
+          dontChange = true;
+          
+        }
       }
       if(menuItem == connections)
       {
          menuItem = 0;
          menu = 0;
+         rewriteLCD();
          return;
-      }      
+      }
       menuItem++;
       rewriteLCD();
+      addToLCD(0, menuItem, " ");
+      menuOneCharacterOn = false;
     }
   }
 }
