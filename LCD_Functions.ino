@@ -1,5 +1,6 @@
-
+// Change only characters that differ from the current display
 void displayLCD(){
+  //Compare each character you want to display with its already displayed counterpart
   if(LCDData != prevLCDData)
   {  for(int y = 0; y < 4; y++)
     {
@@ -13,6 +14,7 @@ void displayLCD(){
         }
       }
     }
+    // Display bells at the end of each line
     int line = 0;
     for(int i = 0; i < 3; i++)
     {
@@ -33,6 +35,7 @@ void displayLCD(){
   }
 }
 
+// Edit the array that contains the LCD text to be displayed
 void addToLCD(int cursorX, int cursorY, String text)
 {
   for(int i = cursorX; i < (cursorX + (int)text.length()) && i < 19; i++)
@@ -41,8 +44,7 @@ void addToLCD(int cursorX, int cursorY, String text)
   }
 }
 
-
-
+//Generate the LCD display from scratch
 void rewriteLCD()
 {
 //  LCD.noCursor();
@@ -67,6 +69,7 @@ void rewriteLCD()
   }
 }
 
+// Wipe the array holding the display for the LCD screen
 void clearLCDData()
 {
   for(int y = 0; y < 4; y++)

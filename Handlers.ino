@@ -1,3 +1,4 @@
+// Interrupt service routinue
 void isr ()  {
   static unsigned long lastInterruptTime = 0;
   unsigned long interruptTime = millis();
@@ -17,6 +18,7 @@ void isr ()  {
   lastInterruptTime = interruptTime;
 }
 
+// Get click of encoders, create sound, register if you held the encoder
 void checkEncoder()
 {
   if(digitalRead(switchPin) && beenPressed)
@@ -40,6 +42,7 @@ void checkEncoder()
   
 }
 
+// Open menus after a click or hold
 void onClick(bool hold)
 {
   deltaEncoder = 0;

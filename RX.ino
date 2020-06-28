@@ -23,6 +23,8 @@ bool activePipes[3] = {false, false, false};
 bool timeout[3] = {false, false, false};
 bool silentPipes[3] = {false, true, false};
 unsigned long receiveTimes[3];
+unsigned long resetTime;
+byte received;
 
 // Received data
 float data[3] = {0,0,0};
@@ -43,18 +45,14 @@ int clearHoldTime = 5000;
 int silentHoldTime = 2000;
 int numOfCells = 3;
 
-unsigned long resetTime;
-bool beenPressed;
-
-unsigned long pressTime = 0;
-
+// UI
 int menu = 0;
 int menuItem = 0;
-
 byte addressLetters[3] = {48,49,50};
 bool menuOneCharacterOn = true;
-int editingAddress;
+int editingARddress;
 
+//Symbols
 byte Bell[8]
 {
   B00000,
@@ -80,14 +78,15 @@ byte silentBell[8]
 
 
 void setup() {
-  // put your setup code here, to run once:
+    //Init LCD screen
     LCD.init();
     LCD.backlight();
     LCD.home();
     LCD.createChar(0, Bell);
     LCD.createChar(1, silentBell);
     rewriteLCD();
-    
+
+    //Init wireless module 
     radio.begin();
     radio.openReadingPipe(1, address[0]);
     radio.openReadingPipe(2, address[1]);
@@ -95,62 +94,59 @@ void setup() {
     radio.setPALevel(RF24_PA_MAX);
     radio.maskIRQ(1,1,0);
     radio.setDataRate(RF24_250KBPS);
-    
     attachInterrupt(digitalPinToInterrupt(outputA), isr, LOW);
 
+    // Get saved letters from storage
     addressLetters[0] = EEPROM.read(0);
     addressLetters[1] = EEPROM.read(1);
     addressLetters[2] = EEPROM.read(2);
 }
 
 void loop() {
-  
+  //Refresh wireless module every 5 seconds
   if(resetTime + 5000 <millis())
   {
     radio.stopListening();
     radio.startListening(); 
     resetTime = millis();
   }
-  byte received;
+
+  // Get data from wireless module and store in the correct index in array
+  // 'received' is the number of the pipe with data
   if (radio.available(&received) > 0) {
+    // Get data
     short newData;
-    radio.read( &newData, sizeof(short));
+    radio.read(&newData, sizeof(short));
+    
+    // Convert the value from 0-1023 to voltage
     float floatData = (newData/204.6f*1330)/330 - 0.15f;
-    if(floatData > 2*numOfCells)
+    data[received - 1] = floatData;
+
+    // Time of receive (for buzzer)
+    receiveTimes[received - 1] = millis();
+
+    // If it has timed out or has not connected before refresh the display
+    if(!activePipes[received - 1])
     {
-      data[received - 1] = floatData;
-      receiveTimes[received - 1] = millis();
-      if(!activePipes[received - 1])
-      {
-        activePipes[received - 1] = true;
-        rewriteLCD();
-      }
-      if(timeout[received - 1])
-        {
-          timeout[received - 1] = false;
-          rewriteLCD();
-        }
+      activePipes[received - 1] = true;
+      rewriteLCD();
+    }
+    if(timeout[received - 1])
+    {
+      timeout[received - 1] = false;
+      rewriteLCD();
     }
   }
+  // Controls letter selection of addresses
   menuOne();
+  // Gets player input
   checkEncoder();
+  // Checks if any batteries have dropped too low
   checkMinVoltages();
+  // Check if any modules have lost connection
   checkTimeout();
+  // Check and then display any changes to the LCD screen
   displayLCD();
-  if(alarm && alarmWaitTime + 30000 < millis())
-  {
-    if(alarmTime + 300 < millis())
-    {
-      toneAC(400, 10, 150, true);
-      alarmCount++;
-    }
-    if(alarmCount>10)
-    {
-      alarmWaitTime = millis();
-      alarm = false;
-      alarmCount = 0;
-    }
-  }
-//  LCD.setCursor(0,3);
-//  LCD.print(((String)menu + ", " +(String)menuItem));
+  // Alarm controller
+  alarm();
 }

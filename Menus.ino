@@ -1,8 +1,14 @@
+// Time of letter flash
 unsigned long letterFlash;
+
+// Change the letter that defines each wireless module using the rotary encoder
 void menuOne()
 {
+  // If the menu one is not meant to be open
   if(menu != 1)
     return;
+
+  //Flash the character selected
   if(letterFlash + 300 < millis())
   {
     if(menuOneCharacterOn)
@@ -17,12 +23,14 @@ void menuOne()
     }
     letterFlash = millis();
   }
+
+  //Change the character to the degree of the spin of the encoder and save to peristant memory
   if(deltaEncoder != 0)
   {
     byte num = addressLetters[editingAddress];
     for(int i = 0; i < abs(deltaEncoder); i++)
     {
-      num += -deltaEncoder/abs(deltaEncoder);
+      num -= deltaEncoder/abs(deltaEncoder);
       switch(num)
       {
         case 123:
@@ -53,6 +61,7 @@ void menuOne()
     letterFlash = millis();
   }
 }
+// Clear saved letters
 void ResetEEPROM()
 {
   addressLetters[0] = 48;
